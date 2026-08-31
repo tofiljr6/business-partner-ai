@@ -6,7 +6,11 @@
     "@sap-cloud-sdk/connectivity": "^4.9.1",
     "@sap-cloud-sdk/http-client": "^4.9.1",
     "@sap/cds": "^9",
-    "@sap/xssec": "^4"
+    "@sap/xssec": "^4",
+    "@langchain/core": "^0.3.40",
+    "@langchain/langgraph": "^0.2.55",
+    "@langchain/openai": "^0.4.4",
+    "zod": "^3.24.1"
   },
   "devDependencies": {
     "@cap-js/sqlite": "^2.4"

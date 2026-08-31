@@ -20,3 +20,37 @@ File or Folder | Purpose
 ## Learn More
 
 Learn more at <https://cap.cloud.sap>.
+
+
+---
+
+## LangGraph flow (`ask`)
+
+Przeplyw w Node.js oparty o `@langchain/langgraph` + OpenAI. Kod: srv/lib/graph.js, srv/lib/bpClient.js.
+
+Wezly:
+1. extractPartner - LLM wyciaga numer business partnera z zapytania.
+2. fetch - wywoluje przetestowany backend (ZMTO_AI_BP_SRV .../Identifications) dla tego numeru.
+3. decide - LLM ocenia, czy personal id jest aktualny na dzis (current / outdated / unknown).
+4. rozgalezienie:
+   - ok    - komunikat: "Partner ... ma aktualny personal id".
+   - draft - LLM przygotowuje propozycje e-maila do partnera; requiresConfirmation: true.
+   - fail  - komunikat bledu.
+
+Czlowiek zatwierdza wysylke - dopiero wtedy UI wola akcje sendPartnerEmail.
+
+### Uruchomienie
+
+    npm install
+    cp .env.example .env    # uzupelnij OPENAI_API_KEY
+    cds watch
+
+Test HTTP:
+
+    curl -s http://localhost:4004/odata/v4/business-partner-a-i/ask \
+      -H 'Content-Type: application/json' \
+      -d '{"query":"czy partner 5 ma wazny personal id?"}'
+
+Test samego grafu (dane z mocka):
+
+    BP_MOCK=true OPENAI_API_KEY=sk-... node scripts/test-graph.js "czy partner 5 ma wazny personal id?"
