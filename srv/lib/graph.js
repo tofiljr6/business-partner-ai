@@ -113,29 +113,62 @@ async function fetchNode(state) {
     }
 }
 
-// 3. LLM decides whether the personal id is still valid as of today.
+/** Parse the many date shapes SAP hands back into a UTC start-of-day Date (or null). */
+function parseSapDate(value) {
+    if (value === null || value === undefined || value === '') return null;
+    const s = String(value).trim();
+
+    const edm = s.match(/\/Date\((-?\d+)(?:[+-]\d+)?\)\//); // OData v2: /Date(1580515200000)/
+    if (edm) return startOfDayUTC(new Date(Number(edm[1])));
+
+    if (/^\d{8}$/.test(s)) { // YYYYMMDD
+        return startOfDayUTC(new Date(`${s.slice(0, 4)}-${s.slice(4, 6)}-${s.slice(6, 8)}T00:00:00Z`));
+    }
+
+    const ymd = s.match(/^(\d{4})-(\d{2})-(\d{2})/); // YYYY-MM-DD[...] -> take the date part as UTC
+    if (ymd) return new Date(Date.UTC(+ymd[1], +ymd[2] - 1, +ymd[3]));
+
+    const d = new Date(s);
+    return Number.isNaN(d.getTime()) ? null : startOfDayUTC(d);
+}
+
+function startOfDayUTC(d) {
+    return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
+}
+
+function fmtDate(d) {
+    return d ? d.toISOString().slice(0, 10) : 'n/a';
+}
+
+// 3. LLM only EXTRACTS the relevant identification; the date comparison is done
+//    deterministically in code (the model must not do the arithmetic).
 async function decideNode(state) {
     const llm = model().withStructuredOutput(
         z.object({
-            decision: z.enum(['current', 'outdated', 'unknown']),
-            explanation: z.string()
+            personalIdPresent: z
+                .boolean()
+                .describe('true if any identification is a personal / personnel ID (e.g. type code PERSID, HCM001, a personnel number)'),
+            idNumber: z.string().nullable().describe('the ID number of that identification, or null'),
+            typeCode: z.string().nullable().describe('the type code of that identification, or null'),
+            validFromRaw: z
+                .string()
+                .nullable()
+                .describe('the validity START value copied verbatim from the data (do not reformat), or null'),
+            validToRaw: z
+                .string()
+                .nullable()
+                .describe('the validity END value copied verbatim from the data (do not reformat), or null')
         })
     );
-
-    const today = new Date().toISOString().slice(0, 10);
 
     const res = await llm.invoke([
         {
             role: 'system',
             content:
-                `You assess whether a business partner has a valid (current) personal ID / personnel identifier.\n` +
-                `Today's date: ${today}.\n` +
-                `Analyse the list of identifications. Look at the type that marks a personal/personnel ID and at the ` +
-                `validity date fields (ValidityEndDate / ValidTo / Valid_To, etc.).\n` +
-                `- 'current': a personal ID exists that is valid as of today.\n` +
-                `- 'outdated': a personal ID exists but has expired, or there is no valid one.\n` +
-                `- 'unknown': it cannot be determined from the data.\n` +
-                `Write the explanation in English.`
+                'From the list of business partner identifications, find the personal / personnel ID. ' +
+                'If several exist, choose the one with the latest validity end date. ' +
+                'Return its number, type code and its validity start/end values copied EXACTLY as they appear in the data. ' +
+                'Do NOT judge whether it is still valid and do NOT reformat dates.'
         },
         {
             role: 'user',
@@ -145,7 +178,35 @@ async function decideNode(state) {
         }
     ]);
 
-    return { decision: res.decision, explanation: res.explanation };
+    const today = startOfDayUTC(new Date());
+    const validFrom = parseSapDate(res.validFromRaw);
+    const validTo = parseSapDate(res.validToRaw);
+    const label = `${res.typeCode ? res.typeCode + ' ' : ''}${res.idNumber || ''}`.trim() || 'personal ID';
+
+    let decision;
+    let explanation;
+
+    if (!res.personalIdPresent) {
+        decision = 'outdated';
+        explanation = `No personal ID is on file for partner ${state.partnerId}.`;
+    } else if (validTo && validTo < today) {
+        decision = 'outdated';
+        explanation = `Personal ID ${label} expired on ${fmtDate(validTo)}; today is ${fmtDate(today)}.`;
+    } else if (validFrom && validFrom > today) {
+        decision = 'outdated';
+        explanation = `Personal ID ${label} is not valid yet — its validity starts on ${fmtDate(validFrom)} (today is ${fmtDate(today)}).`;
+    } else if (validTo) {
+        decision = 'current';
+        explanation = `Personal ID ${label} is valid until ${fmtDate(validTo)}; today is ${fmtDate(today)}.`;
+    } else if (res.validToRaw && !validTo) {
+        decision = 'unknown';
+        explanation = `Found personal ID ${label} but its validity end value ("${res.validToRaw}") could not be interpreted.`;
+    } else {
+        decision = 'current';
+        explanation = `Personal ID ${label} is on file with no validity end date.`;
+    }
+
+    return { decision, explanation };
 }
 
 // 4a. Everything fine -> just report on screen.

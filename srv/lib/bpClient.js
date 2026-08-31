@@ -37,10 +37,10 @@ function mockIdentifications(id) {
     return [
         {
             BusinessPartner: id,
-            Type: 'HCM001',            // personnel / personal id
+            Type: 'PERSID',            // personal id
             IdNumber: '99887766',
-            ValidityStartDate: '2019-01-01',
-            ValidityEndDate: '2023-12-31' // expired on purpose -> triggers e-mail draft
+            ValidityStartDate: '2020-01-01',
+            ValidityEndDate: '2026-02-01' // expired -> triggers e-mail draft
         },
         {
             BusinessPartner: id,
