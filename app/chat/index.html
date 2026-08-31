@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Business Partner AI – czat</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+    <div class="layout">
+        <section class="chat">
+            <header>
+                <h1>Business Partner AI</h1>
+                <span class="hint">np. „czy partner 5 ma ważny personal id?”</span>
+            </header>
+
+            <div id="messages" class="messages"></div>
+
+            <form id="form" class="composer">
+                <input id="input" type="text" autocomplete="off"
+                       placeholder="Zadaj pytanie o business partnera…" />
+                <button id="send" type="submit">Wyślij</button>
+            </form>
+        </section>
+
+        <aside class="graph-panel">
+            <h2>Przepływ LangGraph</h2>
+            <div id="graph" class="graph"></div>
+            <div id="event-log" class="event-log"></div>
+        </aside>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

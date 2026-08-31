@@ -54,3 +54,13 @@ Test HTTP:
 Test samego grafu (dane z mocka):
 
     BP_MOCK=true OPENAI_API_KEY=sk-... node scripts/test-graph.js "czy partner 5 ma wazny personal id?"
+
+
+## Czat UI + podgląd przepływu
+
+Statyczna strona: app/chat/ -> http://localhost:4004/chat/
+- czat po lewej, diagram węzłów LangGraph po prawej (podświetla aktualny/gotowy/błędny węzeł na żywo),
+- log zdarzeń pod diagramem,
+- gdy personal id jest nieaktualny, pojawia się edytowalna karta e-maila z przyciskiem "Potwierdzam - wyślij" (wołaczka sendPartnerEmail dopiero po kliknięciu).
+
+Live progress leci przez SSE: GET /ai/ask-stream?query=... (srv/server.js), streamMode "updates" z LangGraph.
