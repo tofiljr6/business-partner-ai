@@ -1,146 +1,24 @@
 <!DOCTYPE html>
-<html lang="pl">
+<html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Business Partner AI</title>
-    <link rel="stylesheet" href="style.css" />
+
+    <script
+        id="sap-ui-bootstrap"
+        src="https://ui5.sap.com/1.120/resources/sap-ui-core.js"
+        data-sap-ui-theme="sap_horizon_dark"
+        data-sap-ui-libs="sap.m,sap.f,sap.ui.layout,sap.ui.core"
+        data-sap-ui-compat-version="edge"
+        data-sap-ui-async="true"
+        data-sap-ui-xx-component-preload="off"
+        data-sap-ui-language="en"
+        data-sap-ui-format-locale="en"
+        data-sap-ui-frame-options="trusted"
+        data-sap-ui-resource-roots='{"bpai": "./"}'
+        data-sap-ui-on-init="module:bpai/init">
+    </script>
 </head>
-<body>
-<div class="shell">
-    <header class="shellbar">
-        <div class="shellbar__logo">BP</div>
-        <div class="shellbar__titles">
-            <span class="shellbar__product">Business Partner AI</span>
-            <span class="shellbar__sub">Weryfikacja Personal ID &middot; LangGraph</span>
-        </div>
-        <div class="shellbar__spacer"></div>
-        <div id="avatar" class="shellbar__avatar" title="Użytkownik">–</div>
-    </header>
-
-    <main class="content">
-        <section class="col col--chat">
-            <div class="card">
-                <div class="card__header">
-                    <h2 class="card__title">Asystent</h2>
-                    <span class="card__subtitle">Zapytaj o business partnera w naturalnym języku</span>
-                </div>
-                <div id="messages" class="messages">
-                    <div class="msg msg--bot">
-                        <div class="msg__bubble">
-                            Cześć. Zapytaj np. <em>„czy partner 5 ma ważny personal id?”</em>
-                        </div>
-                    </div>
-                </div>
-                <form id="form" class="composer">
-                    <input id="input" class="composer__input" type="text" autocomplete="off"
-                           placeholder="Wpisz pytanie…" />
-                    <button id="send" class="btn btn--emphasized" type="submit">Wyślij</button>
-                </form>
-            </div>
-        </section>
-
-        <section class="col col--flow">
-            <div class="card">
-                <div class="card__header">
-                    <h2 class="card__title">Przebieg procesu</h2>
-                    <span class="card__subtitle">Diagram blokowy przepływu LangGraph — na żywo</span>
-                </div>
-
-                <div class="flow">
-                    <svg id="diagram" viewBox="0 0 380 470" xmlns="http://www.w3.org/2000/svg" role="img"
-                         aria-label="Diagram blokowy procesu">
-                        <defs>
-                            <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7"
-                                    markerHeight="7" orient="auto-start-reverse">
-                                <path d="M0,0 L10,5 L0,10 z" class="arrowhead" />
-                            </marker>
-                        </defs>
-
-                        <!-- connectors -->
-                        <path class="link" d="M140,44 L140,58" />
-                        <path class="link" d="M140,102 L140,116" />
-                        <path class="link" d="M140,160 L140,174" />
-                        <path class="link" d="M140,218 L140,230" />
-                        <path class="link link--ok" d="M140,338 L140,356" />
-                        <path class="link link--ok" d="M140,400 L140,416" />
-                        <path class="link link--email" d="M240,286 L310,286 L310,300" />
-                        <path class="link link--email" d="M310,350 L310,364" />
-                        <path class="link link--email" d="M310,410 L310,424" />
-
-                        <text class="edge-label" x="151" y="350">TAK</text>
-                        <text class="edge-label" x="258" y="279">NIE</text>
-
-                        <!-- Start -->
-                        <g class="node" id="n-start">
-                            <ellipse cx="140" cy="26" rx="66" ry="17" />
-                            <text x="140" y="30">Zapytanie użytkownika</text>
-                        </g>
-
-                        <!-- 1. extract -->
-                        <g class="node" id="n-extract">
-                            <rect x="40" y="58" width="200" height="44" rx="10" />
-                            <text x="140" y="76">1 · Wyodrębnij numer</text>
-                            <text x="140" y="90">partnera (LLM)</text>
-                        </g>
-
-                        <!-- 2. fetch -->
-                        <g class="node" id="n-fetch">
-                            <rect x="40" y="116" width="200" height="44" rx="10" />
-                            <text x="140" y="134">2 · Pobierz identyfikacje</text>
-                            <text x="140" y="148">z systemu SAP</text>
-                        </g>
-
-                        <!-- 3. decide -->
-                        <g class="node" id="n-decide">
-                            <rect x="40" y="174" width="200" height="44" rx="10" />
-                            <text x="140" y="192">3 · Oceń ważność</text>
-                            <text x="140" y="206">personal ID (LLM)</text>
-                        </g>
-
-                        <!-- decision -->
-                        <g class="node" id="n-decision">
-                            <polygon points="140,230 240,286 140,342 40,286" />
-                            <text x="140" y="282">Personal ID</text>
-                            <text x="140" y="296">aktualny?</text>
-                        </g>
-
-                        <!-- TAK branch -->
-                        <g class="node" id="n-ok">
-                            <rect x="40" y="356" width="200" height="44" rx="10" />
-                            <text x="140" y="374">Komunikat na ekranie:</text>
-                            <text x="140" y="388">numer jest aktualny</text>
-                            <ellipse cx="140" cy="433" rx="52" ry="16" />
-                            <text x="140" y="437">Koniec</text>
-                        </g>
-
-                        <!-- NIE branch -->
-                        <g class="node" id="n-email">
-                            <rect x="250" y="300" width="120" height="50" rx="10" />
-                            <text x="310" y="322">Przygotuj</text>
-                            <text x="310" y="336">e-mail (LLM)</text>
-
-                            <polygon points="258,364 362,364 354,410 266,410" />
-                            <text x="310" y="384">Człowiek</text>
-                            <text x="310" y="398">potwierdza</text>
-
-                            <ellipse cx="310" cy="440" rx="52" ry="16" />
-                            <text x="310" y="444">Wyślij</text>
-                        </g>
-                    </svg>
-                </div>
-
-                <ol id="steplist" class="steplist">
-                    <li data-step="extract"><span class="dot"></span>Wyodrębnienie numeru partnera</li>
-                    <li data-step="fetch"><span class="dot"></span>Pobranie danych z SAP</li>
-                    <li data-step="decide"><span class="dot"></span>Ocena ważności personal ID</li>
-                    <li data-step="outcome"><span class="dot"></span>Wynik / propozycja działania</li>
-                </ol>
-            </div>
-        </section>
-    </main>
-</div>
-
-<script src="app.js"></script>
-</body>
+<body class="sapUiBody" id="content"></body>
 </html>

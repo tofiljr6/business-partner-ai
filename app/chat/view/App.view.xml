@@ -1,0 +1,116 @@
+<mvc:View
+    controllerName="bpai.controller.App"
+    xmlns:mvc="sap.ui.core.mvc"
+    xmlns="sap.m"
+    xmlns:f="sap.f"
+    xmlns:core="sap.ui.core"
+    displayBlock="true"
+    height="100%">
+
+    <Page id="page" showHeader="true" enableScrolling="false" class="bpaiPage">
+
+        <customHeader>
+            <f:ShellBar
+                title="{i18n>shellTitle}"
+                secondTitle="{i18n>shellSubtitle}"
+                homeIcon="img/logo.svg"
+                homeIconTooltip="{i18n>shellTitle}"
+                showNavButton="false">
+                <f:profile>
+                    <Avatar id="avatar" initials="--" displaySize="XS" />
+                </f:profile>
+            </f:ShellBar>
+        </customHeader>
+
+        <content>
+            <FlexBox
+                class="bpaiLayout"
+                direction="Row"
+                wrap="Wrap"
+                alignItems="Stretch"
+                renderType="Bare">
+
+                <!-- Assistant -->
+                <Panel class="bpaiPanel bpaiChatPanel" backgroundDesign="Solid">
+                    <headerToolbar>
+                        <OverflowToolbar>
+                            <core:Icon src="sap-icon://discussion" class="bpaiPanelIcon" />
+                            <Title text="{i18n>assistantTitle}" level="H2" />
+                            <ToolbarSpacer />
+                            <Text text="{i18n>assistantSubtitle}" class="bpaiPanelSub" />
+                        </OverflowToolbar>
+                    </headerToolbar>
+                    <content>
+                        <VBox class="bpaiChat" fitContainer="true">
+                            <ScrollContainer id="scroll" vertical="true" height="100%" class="bpaiChatScroll">
+                                <VBox id="messages" class="bpaiMessages" />
+                            </ScrollContainer>
+                            <HBox class="bpaiComposer" alignItems="Center">
+                                <Input
+                                    id="queryInput"
+                                    class="bpaiInput"
+                                    width="100%"
+                                    placeholder="{i18n>inputPlaceholder}"
+                                    submit=".onSend" />
+                                <Button
+                                    id="sendBtn"
+                                    text="{i18n>sendButton}"
+                                    type="Emphasized"
+                                    icon="sap-icon://paper-plane"
+                                    press=".onSend" />
+                            </HBox>
+                        </VBox>
+                    </content>
+                </Panel>
+
+                <!-- Process -->
+                <Panel class="bpaiPanel bpaiFlowPanel" backgroundDesign="Solid">
+                    <headerToolbar>
+                        <OverflowToolbar>
+                            <core:Icon src="sap-icon://process" class="bpaiPanelIcon" />
+                            <Title text="{i18n>processTitle}" level="H2" />
+                            <ToolbarSpacer />
+                            <Text text="{i18n>processSubtitle}" class="bpaiPanelSub" />
+                        </OverflowToolbar>
+                    </headerToolbar>
+                    <content>
+                        <VBox class="bpaiFlowWrap">
+                            <core:HTML id="diagram" />
+                            <List
+                                items="{/steps}"
+                                showSeparators="None"
+                                class="bpaiSteps"
+                                width="100%">
+                                <CustomListItem>
+                                    <HBox alignItems="Center" class="bpaiStep">
+                                        <core:Icon
+                                            class="bpaiStepDot"
+                                            src="{= ${state} === 'Done' ? 'sap-icon://sys-enter-2' : ${state} === 'Error' ? 'sap-icon://error' : ${state} === 'Active' ? 'sap-icon://pending' : ${state} === 'Wait' ? 'sap-icon://alert' : 'sap-icon://circle-task-2' }"
+                                            color="{= ${state} === 'Done' ? 'Positive' : ${state} === 'Error' ? 'Negative' : ${state} === 'Active' ? 'Critical' : ${state} === 'Wait' ? 'Critical' : 'Neutral' }" />
+                                        <Text text="{text}" class="bpaiStepText" />
+                                    </HBox>
+                                </CustomListItem>
+                            </List>
+                        </VBox>
+                    </content>
+                </Panel>
+
+            </FlexBox>
+        </content>
+
+        <footer>
+            <OverflowToolbar class="bpaiFooter">
+                <Image src="img/logo.svg" class="bpaiFooterLogo" densityAware="false" />
+                <Text text="{i18n>footerCopyright}" />
+                <ToolbarSpacer />
+                <Text text="{i18n>footerTech}" class="bpaiPanelSub" />
+                <ToggleButton
+                    icon="sap-icon://palette"
+                    tooltip="{i18n>themeTooltip}"
+                    type="Transparent"
+                    press=".onToggleTheme" />
+            </OverflowToolbar>
+        </footer>
+
+    </Page>
+</mvc:View>

@@ -93,3 +93,24 @@ Moduly MTA:
 - `business-partner-ai-approuter` – serwuje UI z `app/chat/` i pilnuje logowania (xsuaa)
 
 Klucz OpenAI: `OPENAI_API_KEY` z env wygrywa; na BTP kod czyta go z powiazanego serwisu (`VCAP_SERVICES`).
+
+
+## Frontend (SAPUI5 / Fiori, English)
+
+`app/chat/` is a real SAPUI5 app (no React/Vue - only SAP's Fiori UI5):
+- `index.html` bootstraps UI5 1.120 from the CDN, theme `sap_horizon_dark`
+- `Component.js` + `manifest.json` - standard Fiori app descriptor
+- `view/App.view.xml` - `sap.f.ShellBar` header (logo, title, avatar), two `sap.m.Panel`s
+  (Assistant + Process), `sap.m.OverflowToolbar` footer with a light/dark toggle
+- `controller/App.controller.js` - chat, SSE client, block-diagram control, email `sap.m.Dialog`
+- `css/style.css` - self-contained light/dark palette for the SVG block diagram
+- all UI text is English and lives in `i18n/i18n.properties`
+- `img/logo.svg` is a placeholder mark - replace with the official SAP logo if your
+  project is licensed to use it (drop the file in and keep the name)
+
+Block diagram = classic flowchart (terminator / process / decision / manual step),
+no `fail` box after the decision; the running / done / waiting / error step is
+highlighted live from the SSE `node` events.
+
+Note: UI5 is loaded from `https://ui5.sap.com`. If your landscape blocks it, switch the
+bootstrap `src` to your BTP UI5 version (HTML5 repo / `sapui5.hana.ondemand.com`).

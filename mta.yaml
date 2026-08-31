@@ -54,10 +54,10 @@ modules:
     build-parameters:
       builder: npm
       ignore:
-        - node_modules/
+        - ".env"
+        - "default-env.json"
     requires:
       - name: business-partner-ai-auth
-      - name: business-partner-ai-destination
       - name: srv-api
         group: destinations
         properties:
