@@ -3,11 +3,39 @@ const { ChatOpenAI } = require('@langchain/openai');
 const { z } = require('zod');
 const { fetchIdentifications } = require('./bpClient');
 
+// Custom dispatcher: short keep-alive avoids "Premature close" from stale
+// sockets (VPN / TLS-inspecting firewalls drop idle connections silently),
+// and honours HTTPS_PROXY / HTTP_PROXY if set.
+let dispatcher;
+try {
+    const undici = require('undici');
+    const proxyUrl = process.env.HTTPS_PROXY || process.env.HTTP_PROXY;
+    dispatcher = proxyUrl
+        ? new undici.ProxyAgent(proxyUrl)
+        : new undici.Agent({ keepAliveTimeout: 10, keepAliveMaxTimeout: 10, connections: 64, pipelining: 0 });
+} catch (_) {
+    dispatcher = null;
+}
+
+async function resilientFetch(url, init) {
+    if (dispatcher) {
+        const { fetch: undiciFetch } = require('undici');
+        return undiciFetch(url, { ...init, dispatcher });
+    }
+    return fetch(url, init);
+}
+
 function model() {
     return new ChatOpenAI({
         model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
         temperature: 0,
-        apiKey: process.env.OPENAI_API_KEY
+        apiKey: process.env.OPENAI_API_KEY,
+        maxRetries: 4,
+        timeout: 60000,
+        configuration: {
+            fetch: resilientFetch,
+            baseURL: process.env.OPENAI_BASE_URL || undefined
+        }
     });
 }
 

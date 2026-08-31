@@ -14,6 +14,7 @@ cds.on('bootstrap', (app) => {
         res.set({
             'Content-Type': 'text/event-stream',
             'Cache-Control': 'no-cache, no-transform',
+            'X-Accel-Buffering': 'no',
             Connection: 'keep-alive'
         });
         if (res.flushHeaders) res.flushHeaders();
@@ -22,6 +23,11 @@ cds.on('bootstrap', (app) => {
             res.write(`event: ${event}\n`);
             res.write(`data: ${JSON.stringify(data)}\n\n`);
         };
+
+        // keep the connection visibly alive while LLM calls run
+        res.write(': connected\n\n');
+        const heartbeat = setInterval(() => res.write(': ping\n\n'), 5000);
+        res.on('close', () => clearInterval(heartbeat));
 
         if (!query.trim()) {
             send('error', { message: 'Brak parametru "query".' });
@@ -51,6 +57,7 @@ cds.on('bootstrap', (app) => {
             console.error('ask-stream failed', e);
             send('error', { message: e.message || String(e) });
         } finally {
+            clearInterval(heartbeat);
             res.end();
         }
     });
