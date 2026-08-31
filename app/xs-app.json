@@ -1,5 +1,5 @@
 {
-  "welcomeFile": "/chat/index.html",
+  "welcomeFile": "/index.html",
   "authenticationMethod": "route",
   "sessionTimeout": 30,
   "routes": [
@@ -20,16 +20,17 @@
     {
       "source": "^/user-api(.*)$",
       "target": "/user-api$1",
-      "service": "sap-approuter-userapi"
+      "service": "sap-approuter-userapi",
+      "authenticationType": "xsuaa"
     },
     {
       "source": "^/chat/(.*)$",
+      "target": "/$1",
       "localDir": "chat",
       "authenticationType": "xsuaa"
     },
     {
-      "source": "^(/[^.]*)?$",
-      "target": "/chat/index.html",
+      "source": "^/(.*)$",
       "localDir": "chat",
       "authenticationType": "xsuaa"
     }
