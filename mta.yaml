@@ -31,7 +31,6 @@ modules:
       - name: business-partner-ai-auth
       - name: business-partner-ai-destination
       - name: business-partner-ai-connectivity
-      - name: business-partner-ai-openai
 
   # ---------- App router (serves the Fiori UI + auth) ----------
   - name: business-partner-ai-approuter
@@ -77,7 +76,9 @@ resources:
       service: connectivity
       service-plan: lite
 
-  # Create once, manually, so the API key never lands in git:
-  #   cf cups business-partner-ai-openai -p '{"OPENAI_API_KEY":"sk-...","OPENAI_MODEL":"gpt-4o-mini"}'
-  - name: business-partner-ai-openai
-    type: org.cloudfoundry.existing-service
+  # The OpenAI API key is NOT in this file and NOT a service binding.
+  # Store it in a BTP Destination named "OPENAI" (subaccount -> Connectivity -> Destinations):
+  #   Type=HTTP  URL=https://api.openai.com/v1  ProxyType=Internet
+  #   Authentication=BasicAuthentication  User=apikey  Password=<the key>   (Password is masked)
+  #   Additional property (optional):  OpenAI.Model = gpt-4o-mini
+  # The srv reads it via the already-bound destination service (see srv/lib/graph.js).
