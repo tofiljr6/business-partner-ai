@@ -19,6 +19,9 @@
   "scripts": {
     "start": "cds-serve"
   },
+  "engines": {
+    "node": "^20 || ^22"
+  },
   "private": true,
   "cds": {
     "requires": {

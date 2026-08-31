@@ -1,0 +1,14 @@
+{
+  "name": "business-partner-ai-approuter",
+  "version": "1.0.0",
+  "description": "App router for Business Partner AI",
+  "engines": {
+    "node": "^20 || ^22"
+  },
+  "dependencies": {
+    "@sap/approuter": "^20"
+  },
+  "scripts": {
+    "start": "node node_modules/@sap/approuter/approuter.js"
+  }
+}

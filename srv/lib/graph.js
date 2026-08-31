@@ -25,16 +25,42 @@ async function resilientFetch(url, init) {
     return fetch(url, init);
 }
 
-function model() {
-    return new ChatOpenAI({
-        model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
-        temperature: 0,
+/**
+ * OPENAI_API_KEY env var wins; on BTP fall back to a bound service
+ * (e.g. user-provided service created with `cf cups ... -p '{"OPENAI_API_KEY":"sk-..."}'`).
+ */
+function openAIConfig() {
+    const cfg = {
         apiKey: process.env.OPENAI_API_KEY,
+        model: process.env.OPENAI_MODEL,
+        baseURL: process.env.OPENAI_BASE_URL
+    };
+    try {
+        const vcap = JSON.parse(process.env.VCAP_SERVICES || '{}');
+        for (const instances of Object.values(vcap)) {
+            for (const svc of instances) {
+                const c = svc.credentials || {};
+                cfg.apiKey = cfg.apiKey || c.OPENAI_API_KEY || c.openai_api_key ||
+                    (/openai/i.test(svc.name || '') ? c.apikey : undefined);
+                cfg.model = cfg.model || c.OPENAI_MODEL || c.openai_model;
+                cfg.baseURL = cfg.baseURL || c.OPENAI_BASE_URL || c.openai_base_url;
+            }
+        }
+    } catch (_) { /* ignore */ }
+    return cfg;
+}
+
+function model() {
+    const cfg = openAIConfig();
+    return new ChatOpenAI({
+        model: cfg.model || 'gpt-4o-mini',
+        temperature: 0,
+        apiKey: cfg.apiKey,
         maxRetries: 4,
         timeout: 60000,
         configuration: {
             fetch: resilientFetch,
-            baseURL: process.env.OPENAI_BASE_URL || undefined
+            baseURL: cfg.baseURL || undefined
         }
     });
 }

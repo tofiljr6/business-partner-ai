@@ -1,0 +1,100 @@
+_schema-version: "3.2"
+ID: business-partner-ai
+version: 1.0.0
+description: "Business Partner AI – LangGraph flow for Personal ID verification"
+
+parameters:
+  enable-parallel-deployments: true
+
+build-parameters:
+  before-all:
+    - builder: custom
+      commands:
+        - npx --yes cds build --production
+
+modules:
+  # ---------- CAP service (Node.js) ----------
+  - name: business-partner-ai-srv
+    type: nodejs
+    path: gen/srv
+    parameters:
+      buildpack: nodejs_buildpack
+      memory: 512M
+      disk-quota: 1024M
+    build-parameters:
+      builder: npm
+    provides:
+      - name: srv-api
+        properties:
+          srv-url: ${default-url}
+    requires:
+      - name: business-partner-ai-db
+      - name: business-partner-ai-auth
+      - name: business-partner-ai-destination
+      - name: business-partner-ai-connectivity
+      - name: business-partner-ai-openai
+
+  # ---------- HANA HDI deployer ----------
+  - name: business-partner-ai-db-deployer
+    type: hdb
+    path: gen/db
+    parameters:
+      buildpack: nodejs_buildpack
+      memory: 256M
+    requires:
+      - name: business-partner-ai-db
+
+  # ---------- App router (serves the Fiori-style UI + auth) ----------
+  - name: business-partner-ai-approuter
+    type: approuter.nodejs
+    path: app
+    parameters:
+      memory: 256M
+      disk-quota: 512M
+    build-parameters:
+      builder: npm
+      ignore:
+        - node_modules/
+    requires:
+      - name: business-partner-ai-auth
+      - name: business-partner-ai-destination
+      - name: srv-api
+        group: destinations
+        properties:
+          name: srv-api
+          url: ~{srv-url}
+          forwardAuthToken: true
+
+resources:
+  - name: business-partner-ai-db
+    type: com.sap.xs.hdi-container
+    parameters:
+      service: hana
+      service-plan: hdi-shared
+
+  - name: business-partner-ai-auth
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: xsuaa
+      service-plan: application
+      path: ./xs-security.json
+      config:
+        xsappname: business-partner-ai-${org}-${space}
+        tenant-mode: dedicated
+
+  - name: business-partner-ai-destination
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: destination
+      service-plan: lite
+
+  - name: business-partner-ai-connectivity
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: connectivity
+      service-plan: lite
+
+  # Create once, manually, so the API key never lands in git:
+  #   cf cups business-partner-ai-openai -p '{"OPENAI_API_KEY":"sk-...","OPENAI_MODEL":"gpt-4o-mini"}'
+  - name: business-partner-ai-openai
+    type: org.cloudfoundry.existing-service

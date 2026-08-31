@@ -1,6 +1,34 @@
 {
-  "scopes": [],
-  "attributes": [],
-  "role-templates": [],
-  "authorities-inheritance": false
+  "xsappname": "business-partner-ai",
+  "tenant-mode": "dedicated",
+  "description": "Security profile for Business Partner AI",
+  "scopes": [
+    {
+      "name": "$XSAPPNAME.User",
+      "description": "Use the Business Partner AI app"
+    }
+  ],
+  "role-templates": [
+    {
+      "name": "BusinessPartnerAIUser",
+      "description": "Business Partner AI user",
+      "scope-references": [
+        "$XSAPPNAME.User"
+      ]
+    }
+  ],
+  "role-collections": [
+    {
+      "name": "BusinessPartnerAI_User",
+      "description": "Business Partner AI user",
+      "role-template-references": [
+        "$XSAPPNAME.BusinessPartnerAIUser"
+      ]
+    }
+  ],
+  "oauth2-configuration": {
+    "redirect-uris": [
+      "https://*.cfapps.*.hana.ondemand.com/**"
+    ]
+  }
 }
