@@ -83,7 +83,7 @@ async function extractPartner(state) {
         z.object({
             partnerId: z
                 .string()
-                .describe('Numer business partnera z zapytania, same cyfry. Pusty string jeśli brak.')
+                .describe('The business partner number from the query, digits only. Empty string if none.')
         })
     );
 
@@ -91,13 +91,14 @@ async function extractPartner(state) {
         {
             role: 'system',
             content:
-                'Wyodrębnij numer business partnera z zapytania użytkownika. Zwróć same cyfry, bez wiodących zer. Jeśli numeru nie ma, zwróć pusty string.'
+                'Extract the business partner number from the user query. ' +
+                'Return digits only, without leading zeros. If there is no number, return an empty string.'
         },
         { role: 'user', content: state.query }
     ]);
 
     if (!res.partnerId) {
-        return { error: 'Nie udało się znaleźć numeru partnera w zapytaniu.' };
+        return { error: 'Could not find a partner number in the query.' };
     }
     return { partnerId: res.partnerId };
 }
@@ -108,7 +109,7 @@ async function fetchNode(state) {
         const identifications = await fetchIdentifications(state.partnerId);
         return { identifications };
     } catch (e) {
-        return { error: `Błąd pobierania identyfikacji partnera: ${e.message}` };
+        return { error: `Failed to fetch the partner's identifications: ${e.message}` };
     }
 }
 
@@ -127,19 +128,20 @@ async function decideNode(state) {
         {
             role: 'system',
             content:
-                `Oceniasz, czy business partner ma ważny (aktualny) personal id / identyfikator osobowy.\n` +
-                `Dzisiejsza data: ${today}.\n` +
-                `Przeanalizuj listę identyfikacji. Zwróć uwagę na typ oznaczający personal/personnel id oraz pola dat ważności ` +
-                `(ValidityEndDate / ValidTo / Valid_To itp.).\n` +
-                `- 'current': istnieje personal id ważny na dziś.\n` +
-                `- 'outdated': personal id istnieje, ale wygasł lub nie ma żadnego ważnego.\n` +
-                `- 'unknown': nie da się ustalić z danych.`
+                `You assess whether a business partner has a valid (current) personal ID / personnel identifier.\n` +
+                `Today's date: ${today}.\n` +
+                `Analyse the list of identifications. Look at the type that marks a personal/personnel ID and at the ` +
+                `validity date fields (ValidityEndDate / ValidTo / Valid_To, etc.).\n` +
+                `- 'current': a personal ID exists that is valid as of today.\n` +
+                `- 'outdated': a personal ID exists but has expired, or there is no valid one.\n` +
+                `- 'unknown': it cannot be determined from the data.\n` +
+                `Write the explanation in English.`
         },
         {
             role: 'user',
             content:
-                `Zapytanie użytkownika: ${state.query}\n\n` +
-                `Identyfikacje (JSON):\n${JSON.stringify(state.identifications, null, 2)}`
+                `User query: ${state.query}\n\n` +
+                `Identifications (JSON):\n${JSON.stringify(state.identifications, null, 2)}`
         }
     ]);
 
@@ -149,7 +151,7 @@ async function decideNode(state) {
 // 4a. Everything fine -> just report on screen.
 function okNode(state) {
     return {
-        message: `Partner ${state.partnerId} ma aktualny personal id. ${state.explanation}`,
+        message: `Partner ${state.partnerId} has a current personal ID. ${state.explanation}`,
         emailDraft: null,
         requiresConfirmation: false
     };
@@ -168,16 +170,17 @@ async function draftEmailNode(state) {
         {
             role: 'system',
             content:
-                'Napisz uprzejmy, formalny e-mail po polsku do business partnera z prośbą o potwierdzenie lub aktualizację ' +
-                'jego personal id, który wygląda na nieaktualny. Zwięźle, bez zbędnych ozdobników. Nie wymyślaj danych kontaktowych.'
+                'Write a polite, formal email in English to the business partner asking them to confirm or update ' +
+                'their personal ID, which appears to be out of date. Keep it concise, no fluff. ' +
+                'Do not invent contact details or names.'
         },
-        { role: 'user', content: `Numer partnera: ${state.partnerId}\nPowód kontaktu: ${state.explanation}` }
+        { role: 'user', content: `Partner number: ${state.partnerId}\nReason for contact: ${state.explanation}` }
     ]);
 
     return {
         message:
-            `Personal id partnera ${state.partnerId} wygląda na nieaktualny (${state.decision}). ` +
-            `Przygotowano propozycję e-maila — potwierdź, czy wysłać.`,
+            `Personal ID of partner ${state.partnerId} appears to be out of date (${state.decision}). ` +
+            `A draft email has been prepared — please confirm whether to send it.`,
         emailDraft: { to: '', subject: res.subject, body: res.body },
         requiresConfirmation: true
     };
@@ -185,7 +188,7 @@ async function draftEmailNode(state) {
 
 function failNode(state) {
     return {
-        message: state.error || 'Wystąpił nieznany błąd.',
+        message: state.error || 'An unknown error occurred.',
         emailDraft: null,
         requiresConfirmation: false
     };

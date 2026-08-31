@@ -69,9 +69,9 @@ html, body, #content {
     overflow: hidden;
 }
 
-/* Assistant panel is wider than the Process panel */
-.bpaiChatPanel { flex-grow: 1.9; flex-basis: 30rem; }
-.bpaiFlowPanel { flex-grow: 1; flex-basis: 20rem; }
+/* Assistant panel is wider, but the Process panel still needs room for the diagram */
+.bpaiChatPanel { flex-grow: 1.5; flex-basis: 30rem; }
+.bpaiFlowPanel { flex-grow: 1; flex-basis: 26rem; }
 
 .bpaiPanel > .sapMPanelContent {
     flex: 1;
@@ -159,7 +159,7 @@ html, body, #content {
 .bpaiFlowWrap {
     width: 100%;
     padding: 1rem;
-    gap: 0.5rem;
+    gap: 0.75rem;
     overflow: auto;
 }
 
@@ -169,7 +169,8 @@ html, body, #content {
 }
 .bpaiDiagram svg {
     width: 100%;
-    max-width: 22rem;
+    max-width: 34rem;
+    min-width: 17rem;
     height: auto;
 }
 
