@@ -13,8 +13,7 @@ File or Folder | Purpose
 
 ## Next Steps
 
-- Open a new terminal and run `cds watch`
-- (in VS Code simply choose _**Terminal** > Run Task > cds watch_)
+- Open a new terminal and run `npm run watch` (uses the project-local `npx cds watch`)
 - Start with your domain model, in a CDS file in `db/`
 
 ## Learn More
@@ -43,7 +42,14 @@ Czlowiek zatwierdza wysylke - dopiero wtedy UI wola akcje sendPartnerEmail.
 
     npm install
     cp .env.example .env    # uzupelnij OPENAI_API_KEY
-    cds watch
+    npm run watch           # albo: npx cds watch
+
+WAZNE: uruchamiaj `npx cds watch` / `npm run watch`, a nie globalne `cds watch`.
+Globalny `@sap/cds` + lokalny w projekcie = blad "loaded from different locations".
+Toolchain jest w devDependencies (`@sap/cds-dk`), wiec `npx` bierze wersje z projektu.
+
+W trybie dev CAP odpala pusta baze SQLite in-memory (aplikacja nie ma encji, wiec
+jest ona nieuzywana). W profilu `production` bazy nie ma w ogole (`cds.requires.db: false`).
 
 Test HTTP:
 

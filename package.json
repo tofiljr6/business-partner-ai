@@ -12,8 +12,13 @@
     "undici": "^6.28.0",
     "zod": "^3.24.1"
   },
+  "devDependencies": {
+    "@sap/cds-dk": "^9",
+    "@cap-js/sqlite": "^2.4"
+  },
   "scripts": {
-    "start": "cds-serve"
+    "start": "cds-serve",
+    "watch": "cds watch"
   },
   "engines": {
     "node": "^20 || ^22"
@@ -21,9 +26,9 @@
   "private": true,
   "cds": {
     "requires": {
-      "db": false,
       "[production]": {
-        "auth": "xsuaa"
+        "auth": "xsuaa",
+        "db": false
       }
     }
   }
