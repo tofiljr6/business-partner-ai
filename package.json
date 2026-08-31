@@ -2,7 +2,6 @@
   "name": "Business_AI_Partner-1788161994958",
   "version": "1.0.0",
   "dependencies": {
-    "@cap-js/hana": "^2",
     "@langchain/core": "^0.3.40",
     "@langchain/langgraph": "^0.2.55",
     "@langchain/openai": "^0.4.4",
@@ -13,9 +12,6 @@
     "undici": "^6.28.0",
     "zod": "^3.24.1"
   },
-  "devDependencies": {
-    "@cap-js/sqlite": "^2.4"
-  },
   "scripts": {
     "start": "cds-serve"
   },
@@ -25,6 +21,7 @@
   "private": true,
   "cds": {
     "requires": {
+      "db": false,
       "[production]": {
         "auth": "xsuaa"
       }

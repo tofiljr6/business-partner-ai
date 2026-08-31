@@ -45,20 +45,25 @@
                             <ScrollContainer id="scroll" vertical="true" height="100%" class="bpaiChatScroll">
                                 <VBox id="messages" class="bpaiMessages" />
                             </ScrollContainer>
-                            <HBox class="bpaiComposer" alignItems="Center">
-                                <Input
+                            <VBox class="bpaiComposer">
+                                <TextArea
                                     id="queryInput"
                                     class="bpaiInput"
                                     width="100%"
-                                    placeholder="{i18n>inputPlaceholder}"
-                                    submit=".onSend" />
-                                <Button
-                                    id="sendBtn"
-                                    text="{i18n>sendButton}"
-                                    type="Emphasized"
-                                    icon="sap-icon://paper-plane"
-                                    press=".onSend" />
-                            </HBox>
+                                    rows="3"
+                                    growing="true"
+                                    growingMaxLines="8"
+                                    placeholder="{i18n>inputPlaceholder}" />
+                                <HBox justifyContent="SpaceBetween" alignItems="Center" class="bpaiComposerBar">
+                                    <Text text="{i18n>composerHint}" class="bpaiPanelSub" />
+                                    <Button
+                                        id="sendBtn"
+                                        text="{i18n>sendButton}"
+                                        type="Emphasized"
+                                        icon="sap-icon://paper-plane"
+                                        press=".onSend" />
+                                </HBox>
+                            </VBox>
                         </VBox>
                     </content>
                 </Panel>

@@ -56,20 +56,19 @@ Test samego grafu (dane z mocka):
     BP_MOCK=true OPENAI_API_KEY=sk-... node scripts/test-graph.js "czy partner 5 ma wazny personal id?"
 
 
-## Czat UI + podgląd przepływu
+## UI
 
-Statyczna strona: app/chat/ -> http://localhost:4004/chat/
-- czat po lewej, diagram węzłów LangGraph po prawej (podświetla aktualny/gotowy/błędny węzeł na żywo),
-- log zdarzeń pod diagramem,
-- gdy personal id jest nieaktualny, pojawia się edytowalna karta e-maila z przyciskiem "Potwierdzam - wyślij" (wołaczka sendPartnerEmail dopiero po kliknięciu).
-
-Live progress leci przez SSE: GET /ai/ask-stream?query=... (srv/server.js), streamMode "updates" z LangGraph.
+`app/chat/` -> http://localhost:4004/chat/ . Opis w sekcji **Frontend (SAPUI5 / Fiori)** nizej.
+Postep na zywo leci przez SSE: `GET /ai/ask-stream?query=...` ([srv/server.js](srv/server.js)),
+`streamMode "updates"` z LangGraph.
 
 
 ## Deploy na SAP BTP (Cloud Foundry)
 
+Aplikacja jest bezstanowa - NIE ma bazy danych (ani HANA, ani zadnej innej).
+
 Wymagane raz:
-- HANA Cloud instance w subaccount (plan `hdi-shared`), uprawnienia do `xsuaa`, `destination`, `connectivity`
+- uprawnienia do uslug `xsuaa`, `destination`, `connectivity` w subaccount
 - destinacja `SA1_300` skonfigurowana w subaccount (ta sama, ktorej uzywa `getPartner`)
 - CLI: `cf`, plugin `multiapps` (`cf install-plugin multiapps`), oraz `mbt` (`npm i -g mbt`)
 
@@ -88,8 +87,7 @@ Po deployu:
 - podmiana klucza: `cf uups business-partner-ai-openai -p '{"OPENAI_API_KEY":"sk-..."}'` i restart `cf restart business-partner-ai-srv`
 
 Moduly MTA:
-- `business-partner-ai-srv`      – serwis CAP + graf LangGraph + endpoint SSE `/ai/ask-stream`
-- `business-partner-ai-db-deployer` – deployer HANA HDI (tabela outbox CAP)
+- `business-partner-ai-srv`      – serwis CAP + graf LangGraph + endpoint SSE `/ai/ask-stream` (bez bazy)
 - `business-partner-ai-approuter` – serwuje UI z `app/chat/` i pilnuje logowania (xsuaa)
 
 Klucz OpenAI: `OPENAI_API_KEY` z env wygrywa; na BTP kod czyta go z powiazanego serwisu (`VCAP_SERVICES`).

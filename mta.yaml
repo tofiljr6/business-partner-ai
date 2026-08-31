@@ -13,7 +13,7 @@ build-parameters:
         - npx --yes cds build --production
 
 modules:
-  # ---------- CAP service (Node.js) ----------
+  # ---------- CAP service (Node.js, stateless – no database) ----------
   - name: business-partner-ai-srv
     type: nodejs
     path: gen/srv
@@ -28,23 +28,12 @@ modules:
         properties:
           srv-url: ${default-url}
     requires:
-      - name: business-partner-ai-db
       - name: business-partner-ai-auth
       - name: business-partner-ai-destination
       - name: business-partner-ai-connectivity
       - name: business-partner-ai-openai
 
-  # ---------- HANA HDI deployer ----------
-  - name: business-partner-ai-db-deployer
-    type: hdb
-    path: gen/db
-    parameters:
-      buildpack: nodejs_buildpack
-      memory: 256M
-    requires:
-      - name: business-partner-ai-db
-
-  # ---------- App router (serves the Fiori-style UI + auth) ----------
+  # ---------- App router (serves the Fiori UI + auth) ----------
   - name: business-partner-ai-approuter
     type: approuter.nodejs
     path: app
@@ -66,12 +55,6 @@ modules:
           forwardAuthToken: true
 
 resources:
-  - name: business-partner-ai-db
-    type: com.sap.xs.hdi-container
-    parameters:
-      service: hana
-      service-plan: hdi-shared
-
   - name: business-partner-ai-auth
     type: org.cloudfoundry.managed-service
     parameters:

@@ -72,6 +72,19 @@ sap.ui.define([
             this._loadUser();
         },
 
+        onAfterRendering: function () {
+            if (this._keyBound) { return; }
+            var dom = this.byId("queryInput").getFocusDomRef();
+            if (!dom) { return; }
+            dom.addEventListener("keydown", function (e) {
+                if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    this.onSend();
+                }
+            }.bind(this));
+            this._keyBound = true;
+        },
+
         /* ---------------- UI actions ---------------- */
 
         onToggleTheme: function () {
