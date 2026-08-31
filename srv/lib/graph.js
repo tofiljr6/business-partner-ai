@@ -26,24 +26,15 @@ async function resilientFetch(url, init) {
 }
 
 /**
- * Resolve the OpenAI credentials, in order of precedence:
- *   1. env vars (local dev / .env)
- *   2. any bound service in VCAP_SERVICES (user-provided service - legacy)
- *   3. a BTP Destination named OPENAI (recommended for production):
- *        Type=HTTP, URL=https://api.openai.com/v1, Authentication=BasicAuthentication,
- *        User=apikey, Password=<the key>   <-- Password is stored masked in the cockpit
- *      optional Additional Property  OpenAI.Model = gpt-4o-mini
- * Resolved once and cached (getDestination is async).
+ * OPENAI_API_KEY env var wins; on BTP fall back to a bound service
+ * (e.g. user-provided service created with `cf cups ... -p '{"OPENAI_API_KEY":"sk-..."}'`).
  */
-let _secretsPromise;
-
-async function resolveSecrets() {
+function openAIConfig() {
     const cfg = {
         apiKey: process.env.OPENAI_API_KEY,
         model: process.env.OPENAI_MODEL,
         baseURL: process.env.OPENAI_BASE_URL
     };
-
     try {
         const vcap = JSON.parse(process.env.VCAP_SERVICES || '{}');
         for (const instances of Object.values(vcap)) {
@@ -56,37 +47,11 @@ async function resolveSecrets() {
             }
         }
     } catch (_) { /* ignore */ }
-
-    if (!cfg.apiKey) {
-        try {
-            const { getDestination } = require('@sap-cloud-sdk/connectivity');
-            const dest = await getDestination({ destinationName: process.env.OPENAI_DESTINATION || 'OPENAI' });
-            if (dest) {
-                const authHeader = (dest.originalProperties || {})['URL.headers.Authorization'];
-                cfg.apiKey = dest.password ||
-                    (dest.authTokens && dest.authTokens[0] && dest.authTokens[0].value) ||
-                    (authHeader ? authHeader.replace(/^Bearer\s+/i, '') : undefined);
-                cfg.model = cfg.model ||
-                    (dest.originalProperties || {})['OpenAI.Model'] || dest['OpenAI.Model'];
-                if (dest.url && /\/v\d(\/|$)/.test(dest.url)) {
-                    cfg.baseURL = cfg.baseURL || dest.url.replace(/\/+$/, '');
-                }
-            }
-        } catch (e) {
-            console.warn('OPENAI destination not available:', e.message);
-        }
-    }
-
     return cfg;
 }
 
-function getSecrets() {
-    if (!_secretsPromise) { _secretsPromise = resolveSecrets(); }
-    return _secretsPromise;
-}
-
-async function model() {
-    const cfg = await getSecrets();
+function model() {
+    const cfg = openAIConfig();
     return new ChatOpenAI({
         model: cfg.model || 'gpt-4o-mini',
         temperature: 0,
@@ -114,7 +79,7 @@ const State = Annotation.Root({
 
 // 1. LLM pulls the business partner number out of the free-text query.
 async function extractPartner(state) {
-    const llm = (await model()).withStructuredOutput(
+    const llm = model().withStructuredOutput(
         z.object({
             partnerId: z
                 .string()
@@ -149,7 +114,7 @@ async function fetchNode(state) {
 
 // 3. LLM decides whether the personal id is still valid as of today.
 async function decideNode(state) {
-    const llm = (await model()).withStructuredOutput(
+    const llm = model().withStructuredOutput(
         z.object({
             decision: z.enum(['current', 'outdated', 'unknown']),
             explanation: z.string()
@@ -192,7 +157,7 @@ function okNode(state) {
 
 // 4b. Not fine -> draft an e-mail for a human to review before sending.
 async function draftEmailNode(state) {
-    const llm = (await model()).withStructuredOutput(
+    const llm = model().withStructuredOutput(
         z.object({
             subject: z.string(),
             body: z.string()

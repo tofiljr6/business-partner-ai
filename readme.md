@@ -94,26 +94,12 @@ cf login --sso
 cf target        # sprawdz org / space
 ```
 
-### 2. Zapisz klucz OpenAI w Destynacji (raz)
+### 2. Utworz serwis z kluczem OpenAI (raz, nie trafia do gita)
 
-Klucz NIE jest w mta.yaml ani w service bindingu (tam byl widoczny goly).
-Trzyma go Destynacja z zamaskowanym polem Password.
-
-BTP cockpit -> subaccount -> **Connectivity -> Destinations -> New Destination**:
-
-| Pole | Wartosc |
-|---|---|
-| Name | `OPENAI` |
-| Type | `HTTP` |
-| URL | `https://api.openai.com/v1` |
-| Proxy Type | `Internet` |
-| Authentication | `BasicAuthentication` |
-| User | `apikey` |
-| Password | `sk-...` (zapisze sie jako `****`) |
-
-Additional Properties (opcjonalnie): `OpenAI.Model` = `gpt-4o-mini`
-
-Aplikacja czyta ja przez podpiety serwis `destination` (`srv/lib/graph.js`).
+```
+cf create-user-provided-service business-partner-ai-openai \
+  -p '{"OPENAI_API_KEY":"sk-...","OPENAI_MODEL":"gpt-4o-mini"}'
+```
 
 ### 3. Zbuduj archiwum MTA
 
@@ -146,10 +132,10 @@ cf logs business-partner-ai-srv --recent # gdyby cos nie dzialalo
 ### Aktualizacje
 
 - zmiana kodu: `mbt build` + `cf deploy mta_archives/*.mtar`
-- sam klucz OpenAI: edytuj Destynacje `OPENAI` w cockpicie, potem `cf restart business-partner-ai-srv`
+- sam klucz OpenAI: `cf update-user-provided-service business-partner-ai-openai -p '{"OPENAI_API_KEY":"sk-..."}'`
+  a potem `cf restart business-partner-ai-srv`
 
-Kolejnosc szukania klucza: `OPENAI_API_KEY` z env -> bound service z `VCAP_SERVICES` ->
-Destynacja `OPENAI` (pole Password). Model: `OPENAI_MODEL` z env -> `OpenAI.Model` z Destynacji -> `gpt-4o-mini`.
+Klucz OpenAI: `OPENAI_API_KEY` z env wygrywa; na BTP kod czyta go z powiazanego serwisu (`VCAP_SERVICES`).
 UI5 leci z `https://ui5.sap.com` — jesli landscape to blokuje, patrz sekcja Frontend nizej.
 
 
