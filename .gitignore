@@ -7,5 +7,6 @@ gen/
 # MTA build output
 mta_archives/
 resources/
+.*_mta_build_tmp/
 .mta_build_tmp/
 *.mtar

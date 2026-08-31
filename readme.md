@@ -69,34 +69,74 @@ Postep na zywo leci przez SSE: `GET /ai/ask-stream?query=...` ([srv/server.js](s
 `streamMode "updates"` z LangGraph.
 
 
-## Deploy na SAP BTP (Cloud Foundry)
+## Deploy na SAP BTP (Cloud Foundry) — krok po kroku
 
-Aplikacja jest bezstanowa - NIE ma bazy danych (ani HANA, ani zadnej innej).
+Aplikacja jest bezstanowa: NIE ma bazy danych (ani HANA, ani zadnej innej).
+MTA sklada sie z 2 modulow: `business-partner-ai-srv` (CAP + LangGraph + SSE)
+i `business-partner-ai-approuter` (UI z `app/chat/` + logowanie xsuaa).
 
-Wymagane raz:
-- uprawnienia do uslug `xsuaa`, `destination`, `connectivity` w subaccount
-- destinacja `SA1_300` skonfigurowana w subaccount (ta sama, ktorej uzywa `getPartner`)
-- CLI: `cf`, plugin `multiapps` (`cf install-plugin multiapps`), oraz `mbt` (`npm i -g mbt`)
+### 0. Wymagania (raz)
 
-Kroki:
+- narzedzia w terminalu: `cf`, `mbt`, plugin `multiapps`
+  ```
+  cf version
+  mbt --version              # brak? -> npm i -g mbt
+  cf plugins | grep multiapps # brak? -> cf install-plugin multiapps -f
+  ```
+- w subaccount: uprawnienia do uslug `xsuaa`, `destination`, `connectivity`
+- destynacja **`SA1_300`** skonfigurowana w subaccount (ta sama, ktorej uzywa `getPartner`)
 
-    # 1. klucz OpenAI jako user-provided service (nie trafia do gita)
-    cf cups business-partner-ai-openai -p '{"OPENAI_API_KEY":"sk-...","OPENAI_MODEL":"gpt-4o-mini"}'
+### 1. Zaloguj sie do Cloud Foundry
 
-    # 2. build + deploy
-    mbt build
-    cf deploy mta_archives/business-partner-ai_1.0.0.mtar
+```
+cf api https://api.cf.<region>.hana.ondemand.com
+cf login --sso
+cf target        # sprawdz org / space
+```
 
-Po deployu:
-- URL aplikacji = route modulu `business-partner-ai-approuter`
-- przypisz uzytkownikom role collection `BusinessPartnerAI_User` (BTP cockpit -> Security -> Role Collections)
-- podmiana klucza: `cf uups business-partner-ai-openai -p '{"OPENAI_API_KEY":"sk-..."}'` i restart `cf restart business-partner-ai-srv`
+### 2. Utworz serwis z kluczem OpenAI (raz, nie trafia do gita)
 
-Moduly MTA:
-- `business-partner-ai-srv`      – serwis CAP + graf LangGraph + endpoint SSE `/ai/ask-stream` (bez bazy)
-- `business-partner-ai-approuter` – serwuje UI z `app/chat/` i pilnuje logowania (xsuaa)
+```
+cf create-user-provided-service business-partner-ai-openai \
+  -p '{"OPENAI_API_KEY":"sk-...","OPENAI_MODEL":"gpt-4o-mini"}'
+```
+
+### 3. Zbuduj archiwum MTA
+
+```
+npm install
+mbt build
+```
+
+Powstaje `mta_archives/business-partner-ai_1.0.0.mtar`.
+
+### 4. Wdroz
+
+```
+cf deploy mta_archives/business-partner-ai_1.0.0.mtar
+```
+
+Deploy sam tworzy instancje `xsuaa` / `destination` / `connectivity`, podpina
+`business-partner-ai-openai` i wypycha oba moduly.
+
+### 5. Po wdrozeniu
+
+```
+cf apps                                  # URL modulu business-partner-ai-approuter
+cf logs business-partner-ai-srv --recent # gdyby cos nie dzialalo
+```
+
+- w BTP cockpit: **Security -> Role Collections -> `BusinessPartnerAI_User`** -> dodaj swojego uzytkownika, przeloguj sie
+- otworz `https://<approuter-url>` -> logowanie -> aplikacja
+
+### Aktualizacje
+
+- zmiana kodu: `mbt build` + `cf deploy mta_archives/*.mtar`
+- sam klucz OpenAI: `cf update-user-provided-service business-partner-ai-openai -p '{"OPENAI_API_KEY":"sk-..."}'`
+  a potem `cf restart business-partner-ai-srv`
 
 Klucz OpenAI: `OPENAI_API_KEY` z env wygrywa; na BTP kod czyta go z powiazanego serwisu (`VCAP_SERVICES`).
+UI5 leci z `https://ui5.sap.com` — jesli landscape to blokuje, patrz sekcja Frontend nizej.
 
 
 ## Frontend (SAPUI5 / Fiori, English)
